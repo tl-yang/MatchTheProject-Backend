@@ -16,7 +16,8 @@ def test_recognition():
     # img_ = Image.open(img_data)
     # img_.show()
     res = requests.post('http://localhost:5000/recognition',
-                        json={"input": data.decode('utf-8'), 'level': 'level1', 'width': 134, 'height': 138})
+                        json={"input": data.decode('utf-8'), 'level': 'level1', 'width': 134, 'height': 138,
+                              'method': 'cnn'})
     print(time.time() - st)
     if res.ok:
         print(res.json())

@@ -10,6 +10,8 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS
 from recognizer.svc_recognizer import Recognizer, IMAGE_WIDTH, IMAGE_HEIGHT
+# from recognizer.cnn_model import CnnRecognizer, FLAGS
+from recognizer.cnn9_model import Cnn9Model, IMAGE_SIZE, LABEL_MAP
 
 log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'log'))
 
@@ -37,32 +39,43 @@ def create_app(test_config=None):
         pass
 
     recognizer = Recognizer()
+    # cnn_recognizer = CnnRecognizer()
+    model = Cnn9Model()
 
     # recognition function
     @app.route('/recognition', methods=('POST',))
     def recognize():
+        body = request.form
         st = time.time()
-        body = request.get_json()
-        x = base64.b64decode(body['input'])
+        # x = base64.b64decode(body['input'])
         level = body['level']
-        # im = np.array(Image.open(io.BytesIO(x))).reshape(1, -1)
-        original_image = Image.frombytes('RGBA', (body['width'], body['height']), x)
-        image_bytes = original_image.resize(
-            (IMAGE_WIDTH, IMAGE_HEIGHT)).convert('L')
-        inverted_image = PIL.ImageOps.invert(image_bytes)
-            # .point(lambda x: 255 if x > 10 else 0, mode='1')
+        input_image = Image.frombytes('RGBA', (int(body['width']), int(body['height'])),
+                                      request.files['input'].stream.read())
+        # input_image = Image.frombytes('RGBA', (body['width'], body['height']), x)
+        # if body['method'] == 'cnn':
+        #     preprocessed_image = input_image.resize((FLAGS.image_size, FLAGS.image_size)).convert('L')
+        #     preprocessed_image = PIL.ImageOps.invert(preprocessed_image)
+        #     prediction, pred_prob = cnn_recognizer.produce(preprocessed_image)
+        #     print(prediction)
+        #     result = [int(prediction.flatten()[0])]
+        if body['method'] == '9cnn':
+            preprocessed_image = input_image.convert('L').resize(IMAGE_SIZE)
+            preprocessed_image = PIL.ImageOps.invert(preprocessed_image)
+            top_k_pred = model.produce(image=preprocessed_image).flatten()
+            result = [LABEL_MAP[pred] if pred in LABEL_MAP else -1 for pred in top_k_pred]
+        else:
+            preprocessed_image = input_image.resize(
+                (IMAGE_WIDTH, IMAGE_HEIGHT)).convert('L').point(lambda x: 255 if x > 10 else 0, mode='1')
+            im = np.array(preprocessed_image).reshape(1, -1)
+            result = recognizer.produce(im, level)
+
         log_image_name = '{}_{}.jpg'.format(level, time.time())
-        inverted_image_name = 'inverted_{}_{}.jpg'.format(level, time.time())
         original_image_name = 'original_{}_{}.png'.format(level, time.time())
         with open(os.path.join(log_dir, log_image_name), 'wb+') as f:
-            image_bytes.save(f)
+            preprocessed_image.save(f)
         with open(os.path.join(log_dir, original_image_name), 'wb+') as f:
-            original_image.save(f)
-        with open(os.path.join(log_dir, inverted_image_name), 'wb+') as f:
-            inverted_image.save(f)
-        im = np.array(image_bytes).reshape(1, -1)
-        result = recognizer.produce(im, level)
+            input_image.save(f)
         print(time.time() - st)
-        return {'prediction': result}
+        return {'predictions': result}
 
     return app
