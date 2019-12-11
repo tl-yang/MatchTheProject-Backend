@@ -11,7 +11,7 @@
 
 ## Pre-trained Models
 Download [Here](https://drive.google.com/open?id=1dmHhyawT0GplbWmmeFgtUfFwm0UVpiF_)
-and put it in 
+and put it in `recognizer/tf_cnn9_checkpoints`. Other models are also provided for your reference.
 ## How to Run:
 ``````
 export FLASK_ENV=development 
