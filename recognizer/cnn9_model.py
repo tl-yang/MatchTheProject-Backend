@@ -1,10 +1,9 @@
-import time
-import numpy as np
-from PIL import Image
-import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow import keras
 import os
+import time
+
+import numpy as np
+import tensorflow as tf
+from PIL import Image
 
 NUM_LABELS = 3755
 stddev = 0.01
@@ -15,20 +14,38 @@ inf_pic = os.path.join(os.path.dirname(__file__), 'log', 'level1_1574742154.3255
 IMAGE_SIZE = [96, 96]
 
 LABEL_MAP = {
-    0: 1,
-    66: 2,
-    5: 3,
-    643: 4,
-    71: 5,
-    255: 6,
-    2: 7,
-    253: 8,
-    52: 9,
-    402: 10
+    'level1': {
+        0: 1,
+        66: 2,
+        5: 3,
+        643: 4,
+        71: 5,
+        255: 6,
+        2: 7,
+        253: 8,
+        52: 9,
+        402: 10
+    },
+    'level2': {
+        751: 1,
+        1110: 2,
+        2195: 3,
+        2201: 4,
+        1803: 5,
+        2019: 6,
+        1516: 7,
+        1590: 8,
+        403: 9,
+        983: 10,
+    }
+
 }
 
 
 class Cnn9Model(object):
+    """
+    The final test accuracy (in 224000 pics) = top1: 0.950993 , top5: 0.990516 ，top10: 0.994592.
+    """
     def __init__(self):
         self.graph = self.hccr_cnnnet(train=False, regularizer=None, channels=1)
 

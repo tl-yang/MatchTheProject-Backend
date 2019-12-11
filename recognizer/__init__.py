@@ -1,17 +1,15 @@
 import os
-import io
-import base64
 import time
 
-import numpy as np
 import PIL.ImageOps
+import numpy as np
 from PIL import Image
 from flask import Flask
 from flask import request
 from flask_cors import CORS
-from recognizer.svc_recognizer import Recognizer, IMAGE_WIDTH, IMAGE_HEIGHT
-# from recognizer.cnn_model import CnnRecognizer, FLAGS
+
 from recognizer.cnn9_model import Cnn9Model, IMAGE_SIZE, LABEL_MAP
+from recognizer.svc_recognizer import Recognizer, IMAGE_WIDTH, IMAGE_HEIGHT
 
 log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'log'))
 
@@ -39,7 +37,6 @@ def create_app(test_config=None):
         pass
 
     recognizer = Recognizer()
-    # cnn_recognizer = CnnRecognizer()
     model = Cnn9Model()
 
     # recognition function
@@ -47,22 +44,16 @@ def create_app(test_config=None):
     def recognize():
         body = request.form
         st = time.time()
-        # x = base64.b64decode(body['input'])
         level = body['level']
         input_image = Image.frombytes('RGBA', (int(body['width']), int(body['height'])),
                                       request.files['input'].stream.read())
-        # input_image = Image.frombytes('RGBA', (body['width'], body['height']), x)
-        # if body['method'] == 'cnn':
-        #     preprocessed_image = input_image.resize((FLAGS.image_size, FLAGS.image_size)).convert('L')
-        #     preprocessed_image = PIL.ImageOps.invert(preprocessed_image)
-        #     prediction, pred_prob = cnn_recognizer.produce(preprocessed_image)
-        #     print(prediction)
-        #     result = [int(prediction.flatten()[0])]
         if body['method'] == '9cnn':
             preprocessed_image = input_image.convert('L').resize(IMAGE_SIZE)
             preprocessed_image = PIL.ImageOps.invert(preprocessed_image)
             top_k_pred = model.produce(image=preprocessed_image).flatten()
-            result = [LABEL_MAP[pred] if pred in LABEL_MAP else -1 for pred in top_k_pred]
+            print(top_k_pred)
+            print(level)
+            result = [LABEL_MAP[level][pred] if pred in LABEL_MAP[level] else -1 for pred in top_k_pred]
         else:
             preprocessed_image = input_image.resize(
                 (IMAGE_WIDTH, IMAGE_HEIGHT)).convert('L').point(lambda x: 255 if x > 10 else 0, mode='1')
